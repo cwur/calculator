@@ -51,18 +51,13 @@ let states = {
     clear: () => transition("initial"),
   },
   "initial": {
-    entry: () => {
-      reset();
-    },
+    entry: () => reset(),
     actions: {
-      enterNumber: (number) => {
-        transition("enter-number");
-        enterNumber(number);
-      },
-      enterDecimal: () => {
-        transition("enter-decimal");
-        enterDecimal();
-      },
+      enterNumber: (number) => enterNumber(number),
+    },
+    on: {
+      enterDecimal: "enter-decimal",
+      enterNumber: "enter-number",
     },
     exit: () => { },
   },
@@ -70,55 +65,36 @@ let states = {
     entry: () => { },
     actions: {
       enterNumber,
-      enterDecimal: () => {
-        transition("enter-decimal");
-        enterDecimal();
-      },
-      add: () => {
-        add();
-        transition("calculate");
-      },
-      substract: () => {
-        substract();
-        transition("calculate");
-      },
-      multiply: () => {
-        multiply();
-        transition("calculate");
-      },
-      divide: () => {
-        divide();
-        transition("calculate");
-      },
-      calculate: () => {
-        transition("calculate-final");
-      },
+      add,
+      substract,
+      multiply,
+      divide,
+    },
+    on: {
+      calculate: "calculate-final",
+      enterDecimal: "enter-decimal",
+      divide: "calculate",
+      multiply: "calculate",
+      substract: "calculate",
+      add: "calculate",
     },
     exit: () => { },
   },
   "enter-decimal": {
-    entry: () => { },
+    entry: () => { enterDecimal() },
     actions: {
       enterNumber,
-      add: () => {
-        add();
-        transition("calculate");
-      },
-      substract: () => {
-        substract();
-        transition("calculate");
-      },
-      multiply: () => {
-        multiply();
-        transition("calculate");
-      },
-      divide: () => {
-        divide();
-        transition("calculate");
-      },
-      calculate: () => {
-        transition("calculate-final");
-      },
+      add,
+      substract,
+      multiply,
+      divide,
+    },
+    on: {
+      calculate: "calculate-final",
+      divide: "calculate",
+      multiply: "calculate",
+      substract: "calculate",
+      add: "calculate",
     },
     exit: () => { },
   },
@@ -126,29 +102,23 @@ let states = {
     entry: () => calculate(),
     actions: {
       enterNumber: (number) => {
-        transition("enter-number")
+        clearOutput();
         enterNumber(number);
       },
-      enterDecimal: () => {
-        transition("enter-decimal");
-        enterDecimal();
-      },
+      enterDecimal: () => clearOutput()
+    },
+    on: {
+      enterNumber: "enter-number",
+      enterDecimal: "enter-decimal",
     },
     exit: () => {
-      clearOutput();
+      // clearOutput();
     },
   },
   "calculate-final": {
     entry: () => calculate(),
     actions: {
-      enterNumber: (number) => {
-        transition("enter-number")
-        enterNumber(number);
-      },
-      enterDecimal: () => {
-        transition("enter-decimal");
-        enterDecimal();
-      },
+      enterNumber: (number) => enterNumber(number),
     },
     on: {
       enterNumber: "enter-number",
@@ -161,6 +131,8 @@ let states = {
 transition("initial");
 
 function transition(state) {
+  console.log('transition to ', state, states.current)
+
   states[states.current.name].exit();
   states[state].entry();
   states.current.name = state;
@@ -169,23 +141,28 @@ function transition(state) {
 }
 
 function call(action, payload) {
-  console.log(states);
+  // console.log(states);
 
   const state = states[states.current.name];
+
   const actionExistsInState = Object.keys(state.actions).includes(action);
+  const actionExistsAboveState = Object.keys(states.actions).includes(action);
   if (actionExistsInState) {
     state.actions[action](payload);
-    return;
+  } else if (actionExistsAboveState) {
+    states.actions[action](payload);
   }
 
-  const actionExistsAboveState = Object.keys(states.actions).includes(action);
-  if (actionExistsAboveState) {
-    states.actions[action](payload);
-    return;
+  const transitionExistsInState = Object.keys(state.on).includes(action);
+  // console.log(state.on)
+  if (transitionExistsInState) {
+    // console.log('transitioning...')
+    transition(state.on[action]);
   }
 }
 
 function handleClick({ message, value }) {
+  console.log(message, value, states.current)
   call(message, value);
 }
 
@@ -224,10 +201,12 @@ function multiply() {
 
 function calculate() {
   let output = outputNode.textContent;
-
+  console.log("action calculate");
   if (!states.current.number) {
+    console.warn(output, states.current);
     states.current.number = output;
     states.current.calculationType = states.current.calculationTypeNext
+    console.warn(output, states.current)
     return;
   }
 
@@ -242,6 +221,7 @@ function reset() {
   clearOutput();
   states.current.number = null;
   states.current.calculationType = null;
+  states.current.calculationTypeNext = null;
 }
 
 function clearOutput() {
