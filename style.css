@@ -1,0 +1,49 @@
+body {
+  font-family: 'Courier New', Courier, monospace;
+}
+
+h1 {
+  text-align: center;
+}
+
+.output {
+  text-align: right;
+  height: 48px;
+}
+
+.container {
+  width: 50vh;
+  height: 50vw;
+  margin: auto;
+  /* display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: space-around; */
+}
+
+.output {
+  font-size: 32px;
+}
+
+.input {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  grid-gap: 8px;
+}
+
+
+.grid-item-12 {
+  grid-column-start: 1;
+  grid-column-end: 3;
+}
+
+
+.grid-item-34 {
+  grid-column-start: 3;
+  grid-column-end: 5;
+}
+
+button {
+  width: 100%;
+  font-size: 32px;
+}
