@@ -2,6 +2,35 @@ body {
   font-family: 'Courier New', Courier, monospace;
 }
 
+body[data-state="initial"] {
+  background-color:red;
+}
+body[data-state="enter-number"] {
+  background-color: green;
+}
+body[data-state="enter-decimal"] {
+  background-color: yellow;
+}
+
+body[data-state="initial"] button[data-message="add"], 
+body[data-state="initial"] button[data-message="substract"], 
+body[data-state="initial"] button[data-message="multiply"], 
+body[data-state="initial"] button[data-message="divide"],
+body[data-state="initial"] button[data-message="clear"], 
+body[data-state="initial"] button[data-message="calculate"],
+body[data-state="calculate-final"] button[data-message="add"], 
+body[data-state="calculate-final"] button[data-message="substract"], 
+body[data-state="calculate-final"] button[data-message="multiply"], 
+body[data-state="calculate-final"] button[data-message="divide"],
+body[data-state="calculate-final"] button[data-message="calculate"],
+body[data-state="enter-decimal"] button[data-message="enterDecimal"],
+body[data-state="calculate"] button[data-message="calculate"] {
+  background-color: transparent;
+  border-color: rgba(0,0,0,0.2);
+  color: rgba(0,0,0,0.2);
+  pointer-events: none;
+}
+
 h1 {
   text-align: center;
 }

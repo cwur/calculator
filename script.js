@@ -36,139 +36,214 @@ const inputNodes = document.querySelectorAll("button");
 
 inputNodes.forEach(inputNode => {
   inputNode.addEventListener('click', () => handleClick(inputNode.dataset))
-})
-const inputNodesByType = {
-  number: getNodesByType(inputNodes, "number"),
-  decimal: getNodesByType(inputNodes, "decimal"),
-  sign: getNodesByType(inputNodes, "sign"),
-  action: getNodesByType(inputNodes, "action"),
-  clear: getNodesByType(inputNodes, "clear"),
-  equal: getNodesByType(inputNodes, "equal"),
-}
-
+});
 
 let states = {
   "current": {
-    name: "idle",
-    firstNumber: "",
-    action: null,
+    name: "initial",
+    number: null,
+    calculationType: null,
+    calculationTypeNext: null
   },
-  "idle": () => {
-    state = "idle"
-    document.title = state;
-    clearOutput();
-    enableButtonByType("number");
-    enableButtonByType("decimal");
-    enableButtonByType("sign");
-    disableButtonByType("action");
-    disableButtonByType("equal");
-    disableButtonByType("clear");
+  actions: {
+    hello: () => alert("hello initial"),
+    toggleSign,
+    clear: () => transition("initial"),
   },
-  "number": () => {
-    state = "number"
-    document.title = state;
-    enableButtonByType("number");
-    enableButtonByType("decimal");
-    enableButtonByType("sign");
-    enableButtonByType("action");
-    enableButtonByType("equal");
-    enableButtonByType("clear");
+  "initial": {
+    entry: () => {
+      reset();
+    },
+    actions: {
+      enterNumber: (number) => {
+        transition("enter-number");
+        enterNumber(number);
+      },
+      enterDecimal: () => {
+        transition("enter-decimal");
+        enterDecimal();
+      },
+    },
+    exit: () => { },
   },
-  "decimal": () => {
-    state = "decimal"
-    document.title = state;
-    enableButtonByType("number");
-    disableButtonByType("decimal");
-    enableButtonByType("sign");
-    enableButtonByType("action");
-    enableButtonByType("equal");
-    enableButtonByType("clear");
+  "enter-number": {
+    entry: () => { },
+    actions: {
+      enterNumber,
+      enterDecimal: () => {
+        transition("enter-decimal");
+        enterDecimal();
+      },
+      add: () => {
+        add();
+        transition("calculate");
+      },
+      substract: () => {
+        substract();
+        transition("calculate");
+      },
+      multiply: () => {
+        multiply();
+        transition("calculate");
+      },
+      divide: () => {
+        divide();
+        transition("calculate");
+      },
+      calculate: () => {
+        transition("calculate-final");
+      },
+    },
+    exit: () => { },
   },
-  "action": () => {
-    states.idle()
+  "enter-decimal": {
+    entry: () => { },
+    actions: {
+      enterNumber,
+      add: () => {
+        add();
+        transition("calculate");
+      },
+      substract: () => {
+        substract();
+        transition("calculate");
+      },
+      multiply: () => {
+        multiply();
+        transition("calculate");
+      },
+      divide: () => {
+        divide();
+        transition("calculate");
+      },
+      calculate: () => {
+        transition("calculate-final");
+      },
+    },
+    exit: () => { },
+  },
+  "calculate": {
+    entry: () => calculate(),
+    actions: {
+      enterNumber: (number) => {
+        transition("enter-number")
+        enterNumber(number);
+      },
+      enterDecimal: () => {
+        transition("enter-decimal");
+        enterDecimal();
+      },
+    },
+    exit: () => {
+      clearOutput();
+    },
+  },
+  "calculate-final": {
+    entry: () => calculate(),
+    actions: {
+      enterNumber: (number) => {
+        transition("enter-number")
+        enterNumber(number);
+      },
+      enterDecimal: () => {
+        transition("enter-decimal");
+        enterDecimal();
+      },
+    },
+    on: {
+      enterNumber: "enter-number",
+      enterDecimal: "enter-decimal",
+    },
+    exit: () => reset(),
+  },
+}
+
+transition("initial");
+
+function transition(state) {
+  states[states.current.name].exit();
+  states[state].entry();
+  states.current.name = state;
+
+  document.querySelector("body").dataset.state = state;
+}
+
+function call(action, payload) {
+  console.log(states);
+
+  const state = states[states.current.name];
+  const actionExistsInState = Object.keys(state.actions).includes(action);
+  if (actionExistsInState) {
+    state.actions[action](payload);
+    return;
+  }
+
+  const actionExistsAboveState = Object.keys(states.actions).includes(action);
+  if (actionExistsAboveState) {
+    states.actions[action](payload);
+    return;
   }
 }
-let state = "";
-states.idle();
-let summand = "";
 
-function handleClick({ type, value }) {
+function handleClick({ message, value }) {
+  call(message, value);
+}
+
+function enterNumber(number) {
   let output = outputNode.textContent;
-  switch (type) {
-    case "number":
-      if (output.match("\.")) {
-        states.decimal();
-      } else {
-        states.number()
-      }
-      output += value;
-      break;
-    case "sign":
-      if (output[0] === "+") {
-        output = "-" + output.slice(1)
-      } else if (output[0] === "-") {
-        output = "+" + output.slice(1)
-      } else {
-        output = "-" + output
-      }
-      break;
-    case "decimal": {
-      states.decimal();
-      output += ".";
-      break;
-    }
-    case "clear": {
-      states.idle();
-      output = "";
-      break;
-    }
-    case "action": {
-      states.idle();
-      // console.log(output, type, value)
-      if (summand === "") {
-        console.log("saving summand...")
-        summand = output;
-        output = "";
-      } else {
-        console.log("calculating...", summand, output)
-        output = Number(summand) + Number(output);
-        summand = "";
-      }
-      break;
-    }
-    case "equal": {
-      output = Number(summand) + Number(output);
-      break;
-    }
+  outputNode.textContent = output + number;
+}
+
+function toggleSign() {
+  let output = outputNode.textContent;
+  output = output[0] === "-" ? output.slice(1) : "-" + output;
+
+  outputNode.textContent = output;
+}
+
+function enterDecimal() {
+  let output = outputNode.textContent;
+  outputNode.textContent = output + ".";
+}
+
+function add() {
+  states.current.calculationTypeNext = (a, b) => a + b;
+}
+
+function divide() {
+  states.current.calculationTypeNext = (a, b) => b / a;
+}
+
+function substract() {
+  states.current.calculationTypeNext = (a, b) => b - a;
+}
+
+function multiply() {
+  states.current.calculationTypeNext = (a, b) => a * b;
+}
+
+function calculate() {
+  let output = outputNode.textContent;
+
+  if (!states.current.number) {
+    states.current.number = output;
+    states.current.calculationType = states.current.calculationTypeNext
+    return;
   }
-  outputNode.textContent = output
+
+  const newOutput = states.current.calculationType(Number(output), Number(states.current.number));
+  states.current.number = newOutput;
+  outputNode.textContent = newOutput;
+
+  states.current.calculationType = states.current.calculationTypeNext
+}
+
+function reset() {
+  clearOutput();
+  states.current.number = null;
+  states.current.calculationType = null;
 }
 
 function clearOutput() {
-  console.log("clearing...", outputNode.textContent)
-  return outputNode.textContent = "";
-}
-
-function enableNumbers() {
-  Array.from(inputNodesByType.number).forEach(numberNode => enableButton(numberNode))
-}
-
-function getNodesByType(nodes, type) {
-  return Array.from(nodes).filter(node => node.dataset.type === type);
-}
-
-function disableButtonByType(type) {
-  Array.from(inputNodesByType[type]).forEach(node => disableButton(node))
-}
-
-function enableButtonByType(type) {
-  Array.from(inputNodesByType[type]).forEach(node => enableButton(node))
-}
-
-function enableButton(node) {
-  node.disabled = false;
-}
-
-function disableButton(node) {
-  node.disabled = true;
+  outputNode.textContent = "";
 }
