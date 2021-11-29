@@ -1,15 +1,11 @@
-// Setup
-// Get all nodes
-// output
-// input -> buttons
-// Initially reset output to nothing ("")
-// Add event listeners to input
+/*
+ * @TODO: Maximal eine Nachkommastelle eingeben. Neuer State?
+ * @TODO: Keyboard Support!
+ * @TOOD: Löschen von Zeichen?
+ * @TODO: Design?
+ * @TODO: Sonst noch was extra auf der Homepage?
+ */
 
-// States
-// - idle: No number entered. Only numbers, decimal available.
-// - number: Number entered. All buttons available, except equal.
-// - decimal: Decimal point is entered. Only numbers available.
-// - action: Action entered. Only numbers and decimal available.
 
 /**
  * States
@@ -34,8 +30,10 @@
 const outputNode = document.querySelector(".output");
 const inputNodes = document.querySelectorAll("button");
 
+document.addEventListener('keypress', (e) => handleKeyPress(e.key));
+
 inputNodes.forEach(inputNode => {
-  inputNode.addEventListener('click', () => handleClick(inputNode.dataset))
+  inputNode.addEventListener('click', () => handleClick(inputNode.dataset));
 });
 
 let states = {
@@ -111,9 +109,7 @@ let states = {
       enterNumber: "enter-number",
       enterDecimal: "enter-decimal",
     },
-    exit: () => {
-      // clearOutput();
-    },
+    exit: () => { },
   },
   "calculate-final": {
     entry: () => calculate(),
@@ -141,7 +137,7 @@ function transition(state) {
 }
 
 function call(action, payload) {
-  // console.log(states);
+  console.log("action...", action, payload, states);
 
   const state = states[states.current.name];
 
@@ -154,15 +150,18 @@ function call(action, payload) {
   }
 
   const transitionExistsInState = Object.keys(state.on).includes(action);
-  // console.log(state.on)
   if (transitionExistsInState) {
-    // console.log('transitioning...')
     transition(state.on[action]);
   }
 }
 
+function handleKeyPress(key) {
+  const input = Array.from(inputNodes).find(inputNode => inputNode.dataset.key === key);
+  console.log("keypress...", key, input)
+  call(input.dataset.message, input.dataset.value);
+}
+
 function handleClick({ message, value }) {
-  console.log(message, value, states.current)
   call(message, value);
 }
 
@@ -201,7 +200,6 @@ function multiply() {
 
 function calculate() {
   let output = outputNode.textContent;
-  console.log("action calculate");
   if (!states.current.number) {
     console.warn(output, states.current);
     states.current.number = output;
@@ -211,8 +209,9 @@ function calculate() {
   }
 
   const newOutput = states.current.calculationType(Number(output), Number(states.current.number));
-  states.current.number = newOutput;
-  outputNode.textContent = newOutput;
+  const newOuputOneDecimal = newOutput.toFixed(1);
+  states.current.number = +newOuputOneDecimal;
+  outputNode.textContent = newOuputOneDecimal;
 
   states.current.calculationType = states.current.calculationTypeNext
 }
