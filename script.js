@@ -1,137 +1,101 @@
-/*
- * @TODO: Maximal eine Nachkommastelle eingeben. Neuer State?
- * @TODO: Keyboard Support!
- * @TOOD: Löschen von Zeichen?
- * @TODO: Design?
- * @TODO: Sonst noch was extra auf der Homepage?
- */
-
-
-/**
- * States
- * 
- * idle:
- *  ui: only numbers, decimal available
- *  entry: clears output
- *  transistions: first-numbers, first-decimal
- * number:
- *  ui: all buttons available, except equal
- *  function: toogleSign
- *  transitions: first-decimal, action, idle 
- * decimal:
- *  ui: all buttons available, except decimal
- *  function: toogleSign
- *  transitions: action, idle 
- * 
- *  2 -> 2. -> 2.2 -> + -> 3. -> 3.4 -> = 5.6
- * 
- * **/
-
 const outputNode = document.querySelector(".output");
 const inputNodes = document.querySelectorAll("button");
 
-document.addEventListener('keypress', (e) => handleKeyPress(e.key));
-
+document.addEventListener('keydown', (e) => handleKeyEvent(e.key));
 inputNodes.forEach(inputNode => {
   inputNode.addEventListener('click', () => handleClick(inputNode.dataset));
 });
 
 let states = {
-  "current": {
-    name: "initial",
-    number: null,
-    calculationType: null,
-    calculationTypeNext: null
+  "initial": {
+    name: "number",
+    prevNumber: "",
+    prevCalculationFormula: null,
+    number: "0",
+    calculationSymbol: "",
   },
   actions: {
-    hello: () => alert("hello initial"),
-    toggleSign,
-    clear: () => transition("initial"),
+    clear: () => {
+      states.initial.prevNumber = "";
+      states.initial.prevCalculationFormula = null;
+      states.initial.number = "0";
+      states.initial.calculationSymbol = "";
+      transition("number", "0");
+    },
   },
-  "initial": {
-    entry: () => reset(),
+  on: {},
+  "number": {
+    entry: (number) => { enterNumber(number) },
     actions: {
-      enterNumber: (number) => enterNumber(number),
+      toggleSign,
+      deleteCharacter,
+      enterDecimal,
     },
     on: {
-      enterDecimal: "enter-decimal",
-      enterNumber: "enter-number",
+      "enterNumber": "number",
+      "enterDecimal": "decimal",
+      "deleteCharacter": "number",
+      "calculate": "calculation",
+      "calculateFinal": "calculationFinal",
     },
-    exit: () => { },
   },
-  "enter-number": {
-    entry: () => { },
+  "decimal": {
     actions: {
-      enterNumber,
-      add,
-      substract,
-      multiply,
-      divide,
+      toggleSign,
+      deleteCharacter,
     },
     on: {
-      calculate: "calculate-final",
-      enterDecimal: "enter-decimal",
-      divide: "calculate",
-      multiply: "calculate",
-      substract: "calculate",
-      add: "calculate",
+      "enterNumber": "decimalNumber",
+      "deleteCharacter": "number",
     },
-    exit: () => { },
   },
-  "enter-decimal": {
-    entry: () => { enterDecimal() },
+  "decimalNumber": {
+    entry: (number) => { enterNumber(number) },
     actions: {
-      enterNumber,
-      add,
-      substract,
-      multiply,
-      divide,
+      toggleSign,
+      deleteCharacter,
     },
     on: {
-      calculate: "calculate-final",
-      divide: "calculate",
-      multiply: "calculate",
-      substract: "calculate",
-      add: "calculate",
+      "deleteCharacter": "decimal",
+      "calculate": "calculation",
+      "calculateFinal": "calculationFinal",
     },
-    exit: () => { },
   },
-  "calculate": {
-    entry: () => calculate(),
+  "calculation": {
+    entry: (calculationType) => { calculate(calculationType) },
     actions: {
-      enterNumber: (number) => {
-        clearOutput();
-        enterNumber(number);
-      },
-      enterDecimal: () => clearOutput()
+      enterDecimal,
     },
     on: {
-      enterNumber: "enter-number",
-      enterDecimal: "enter-decimal",
+      "enterNumber": "number",
+      "enterDecimal": "decimal",
+      "calculateFinal": "calculationFinal",
     },
-    exit: () => { },
   },
-  "calculate-final": {
-    entry: () => calculate(),
+  "calculationFinal": {
+    entry: () => { calculateFinal() },
     actions: {
-      enterNumber: (number) => enterNumber(number),
+      enterDecimal,
     },
     on: {
-      enterNumber: "enter-number",
-      enterDecimal: "enter-decimal",
+      "calculate": "calculation",
     },
-    exit: () => reset(),
   },
-}
+};
 
-transition("initial");
 
-function transition(state) {
-  console.log('transition to ', state, states.current)
+function transition(state, payload) {
+  console.log('transition to ', state, states.initial)
 
-  states[states.current.name].exit();
-  states[state].entry();
-  states.current.name = state;
+  const exitExistsInState = Object.keys(states[states.initial.name]).includes("exit");
+  if (exitExistsInState) {
+    states[states.initial.name].exit();
+  }
+  const entryExistsInState = Object.keys(states[state]).includes("entry");
+  if (entryExistsInState) {
+    states[state].entry(payload);
+  }
+  states.initial.name = state;
 
   document.querySelector("body").dataset.state = state;
 }
@@ -139,7 +103,7 @@ function transition(state) {
 function call(action, payload) {
   console.log("action...", action, payload, states);
 
-  const state = states[states.current.name];
+  const state = states[states.initial.name];
 
   const actionExistsInState = Object.keys(state.actions).includes(action);
   const actionExistsAboveState = Object.keys(states.actions).includes(action);
@@ -150,79 +114,113 @@ function call(action, payload) {
   }
 
   const transitionExistsInState = Object.keys(state.on).includes(action);
+  const transitionExistsAboveState = Object.keys(states.on).includes(action);
   if (transitionExistsInState) {
-    transition(state.on[action]);
+    transition(state.on[action], payload);
+  } else if (transitionExistsAboveState) {
+    transition(states.on[action], payload);
   }
+
+  printOutput();
 }
 
-function handleKeyPress(key) {
+function handleKeyEvent(key) {
   const input = Array.from(inputNodes).find(inputNode => inputNode.dataset.key === key);
-  console.log("keypress...", key, input)
-  call(input.dataset.message, input.dataset.value);
+  if (input) call(input.dataset.message, input.dataset.value);
 }
 
 function handleClick({ message, value }) {
   call(message, value);
 }
 
+function printOutput() {
+  const { prevNumber, calculationSymbol, number } = states.initial;
+
+  const outputPrevNumber = prevNumber || "";
+  const outputCalculationSymbol = calculationSymbol || "";
+  const outputNumber = number || "0";
+
+  const isDecimalPrevNumber = outputPrevNumber.includes(".");
+  const isDecimalNumber = outputNumber.includes(".");
+  const outputPrevNumberRounded = isDecimalPrevNumber ? (+outputPrevNumber).toFixed(1) : outputPrevNumber;
+  const outputNumberRounded = isDecimalNumber ? (+outputNumber).toFixed(1) : outputNumber;
+
+  outputNode.textContent = `${outputPrevNumberRounded} ${outputCalculationSymbol} ${outputNumberRounded}`;
+}
+
 function enterNumber(number) {
-  let output = outputNode.textContent;
-  outputNode.textContent = output + number;
+  if (states.initial.number === "0") {
+    states.initial.number = number;
+  } else {
+    states.initial.number += number;
+  }
 }
 
 function toggleSign() {
-  let output = outputNode.textContent;
-  output = output[0] === "-" ? output.slice(1) : "-" + output;
+  const number = states.initial.number
+  if (number === "" || number === "0") return;
 
-  outputNode.textContent = output;
+  states.initial.number = number[0] === "-" ? number.slice(1) : "-" + number;
 }
 
 function enterDecimal() {
-  let output = outputNode.textContent;
-  outputNode.textContent = output + ".";
+  states.initial.number += ".";
 }
 
-function add() {
-  states.current.calculationTypeNext = (a, b) => a + b;
-}
+function deleteCharacter() {
+  const number = states.initial.number
 
-function divide() {
-  states.current.calculationTypeNext = (a, b) => b / a;
-}
-
-function substract() {
-  states.current.calculationTypeNext = (a, b) => b - a;
-}
-
-function multiply() {
-  states.current.calculationTypeNext = (a, b) => a * b;
-}
-
-function calculate() {
-  let output = outputNode.textContent;
-  if (!states.current.number) {
-    console.warn(output, states.current);
-    states.current.number = output;
-    states.current.calculationType = states.current.calculationTypeNext
-    console.warn(output, states.current)
+  // Delete minus sign with last number: -3 -> 0
+  if (number[0] === "-" && number.length === 2) {
+    states.initial.number = "";
     return;
   }
 
-  const newOutput = states.current.calculationType(Number(output), Number(states.current.number));
-  const newOuputOneDecimal = newOutput.toFixed(1);
-  states.current.number = +newOuputOneDecimal;
-  outputNode.textContent = newOuputOneDecimal;
-
-  states.current.calculationType = states.current.calculationTypeNext
+  states.initial.number = number.substr(0, number.length - 1);
 }
 
-function reset() {
-  clearOutput();
-  states.current.number = null;
-  states.current.calculationType = null;
-  states.current.calculationTypeNext = null;
+const formula = {
+  add: {
+    func: (a, b) => a + b,
+    symbol: "+"
+  },
+  substract: {
+    func: (a, b) => a - b,
+    symbol: "-"
+  },
+  multiply: {
+    func: (a, b) => a * b,
+    symbol: "*"
+  },
+  divide: {
+    func: (a, b) => a / b,
+    symbol: "/"
+  },
+};
+
+function calculate(calculationType) {
+
+  const { prevNumber, number, prevCalculationFormula, calculationSymbol } = states.initial
+
+  if (prevCalculationFormula) {
+    states.initial.prevNumber = String(prevCalculationFormula(+prevNumber, +number));
+    states.initial.number = "0";
+    states.initial.prevCalculationFormula = formula[calculationType].func;
+    states.initial.calculationSymbol = formula[calculationType].symbol;
+  } else {
+    states.initial.prevNumber = number;
+    states.initial.number = "0";
+    states.initial.prevCalculationFormula = formula[calculationType].func;
+    states.initial.calculationSymbol = formula[calculationType].symbol;
+  }
 }
 
-function clearOutput() {
-  outputNode.textContent = "";
+function calculateFinal() {
+  const { prevNumber, number, prevCalculationFormula, calculationSymbol } = states.initial
+  if (prevCalculationFormula) {
+    states.initial.prevNumber = "";
+    states.initial.number = String(prevCalculationFormula(+prevNumber, +number));
+    states.initial.prevCalculationFormula = null;
+    states.initial.calculationSymbol = "";
+  }
 }

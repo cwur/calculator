@@ -1,57 +1,56 @@
 body {
   font-family: 'Courier New', Courier, monospace;
+  background-color: rgb(177, 218, 177);
+
+  display: flex;
+  justify-content: center;
+  align-items: center;
+
+  height: 100vh;
+  width: 100vw;
+  padding: 0px;
+  margin: 0px;
 }
 
-body[data-state="initial"] {
-  background-color:red;
-}
-body[data-state="enter-number"] {
-  background-color: green;
-}
-body[data-state="enter-decimal"] {
-  background-color: yellow;
-}
-
-body[data-state="initial"] button[data-message="add"], 
-body[data-state="initial"] button[data-message="substract"], 
-body[data-state="initial"] button[data-message="multiply"], 
-body[data-state="initial"] button[data-message="divide"],
-body[data-state="initial"] button[data-message="clear"], 
 body[data-state="initial"] button[data-message="calculate"],
-body[data-state="calculate-final"] button[data-message="add"], 
-body[data-state="calculate-final"] button[data-message="substract"], 
-body[data-state="calculate-final"] button[data-message="multiply"], 
-body[data-state="calculate-final"] button[data-message="divide"],
-body[data-state="calculate-final"] button[data-message="calculate"],
-body[data-state="enter-decimal"] button[data-message="enterDecimal"],
-body[data-state="calculate"] button[data-message="calculate"] {
+body[data-state="initial"]          button[data-message="clear"], 
+body[data-state="initial"]          button[data-message="calculateFinal"],
+body[data-state="initial"]          button[data-message="deleteCharacter"],
+body[data-state="decimal"]          button[data-message="enterDecimal"],
+body[data-state="decimalNumber"]    button[data-message="enterDecimal"],
+body[data-state="decimalNumber"]    button[data-message="enterNumber"],
+body[data-state="calculation"]      button[data-message="calculate"],
+body[data-state="calculationFinal"] button[data-message="calculate"], 
+body[data-state="calculationFinal"] button[data-message="enterNumber"],
+body[data-state="calculationFinal"] button[data-message="enterDecimal"],
+body[data-state="calculationFinal"] button[data-message="toggleSign"],
+body[data-state="calculationFinal"] button[data-message="calculateFinal"],
+body[data-state="calculationFinal"] button[data-message="deleteCharacter"] {
   background-color: transparent;
-  border-color: rgba(0,0,0,0.2);
-  color: rgba(0,0,0,0.2);
+  border-color: rgba(0,0,0,0.5);
+  color: rgba(0,0,0,0.5);
   pointer-events: none;
 }
-
-h1 {
-  text-align: center;
+.container {
+  min-width: 300px;
+  background-color: rgb(51, 51, 51);
+  border-radius: 10px;
+  padding: 24px;
+  box-shadow: 4px 3px 8px 1px rgba(0,0,0,0.75);
 }
 
 .output {
+  font-size: 48px;
+  background-color: rgba(0, 128, 0, 0.4);
+  color: whitesmoke;
+  padding: 4px 8px;
+  border-radius: 10px;
+  margin-bottom: 16px;
+
   text-align: right;
   height: 48px;
-}
 
-.container {
-  width: 50vh;
-  height: 50vw;
-  margin: auto;
-  /* display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: space-around; */
-}
-
-.output {
-  font-size: 32px;
+  box-shadow: inset 2px 1px 4px 1px rgba(0,0,0,0.75);
 }
 
 .input {
@@ -60,19 +59,16 @@ h1 {
   grid-gap: 8px;
 }
 
-
 .grid-item-12 {
   grid-column-start: 1;
   grid-column-end: 3;
 }
 
-
-.grid-item-34 {
-  grid-column-start: 3;
-  grid-column-end: 5;
-}
-
 button {
   width: 100%;
   font-size: 32px;
+  border-radius: 10px;
+  font-weight: bold;
+  background-color: lightgrey;
+  box-shadow: 2px 1px 4px 1px rgba(0,0,0,0.25);
 }
