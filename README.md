@@ -11,6 +11,8 @@ clear
 0 . ± /
 equal
 
+I coded my own state machine inspired by [xstate](https://xstate.js.org/).
+
 # Use Cases
 ## Calculate
 **As a** user **I want** to perform calculation **so that** I do not need to calculate in my head.
